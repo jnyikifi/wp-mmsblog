@@ -64,7 +64,7 @@ require_once 'PEAR.php';
 *    perhaps even message/partial.
 *
 * @author  Richard Heyes <richard@phpguru.org>
-* @version $Revision: 1.1 $
+* @version $Revision: 1.1.1.1 $
 * @package Mail
 */
 
