@@ -155,7 +155,7 @@ for ($i=1; $i <= $count; $i++) {
 	$post_ID = $wpdb->insert_id;
 	debug_p("post_ID $post_ID");
 
-	// TODO: Fix this!!! do_action('publish_post', $post_ID);
+	do_action('publish_post', $post_ID);
 	do_action('publish_phone', $post_ID);
 	pingback($content, $post_ID);
 	
