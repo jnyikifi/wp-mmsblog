@@ -293,9 +293,14 @@ function get_content ($part) {
 			}
 			break;
 		case 'text':
-			$meta_return = get_text($part);
-			debug_part($part);
-			debug_p("posting $meta_return");
+		    if ($part->ctype_secondary == "html") {
+		        debug_p("  text/html encountered, skipping");
+		        $meta_return = "";
+		    } else {
+			    $meta_return = get_text($part);
+			    debug_part($part);
+			    debug_p("posting $meta_return");
+			}
 			break;
 		case 'image':
 			$meta_return = get_image($part);
@@ -311,6 +316,9 @@ function get_content ($part) {
 		    $name = get_attachment_name($part);
 		    if ($part->ctype_secondary == "applefile") {
 		        debug_p("  application/applefile encountered, skipping");
+		        $meta_return = "";
+		    } elseif ($part->ctype_secondary == "smil") {
+		        debug_p("  application/smil encountered, skipping");
 		        $meta_return = "";
 		    }
 			// try to figure out the type from the filename
