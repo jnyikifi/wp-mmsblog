@@ -22,6 +22,8 @@ require_once (dirname(__FILE__) . '/mimedecode.php');
 error_reporting(2037);
 
 $time_difference = get_settings('gmt_offset');
+$photosdir = 'wp-photos/';
+$filesdir = 'wp-filez/';
 
 //retrieve mail
 $pop3 = new POP3();
@@ -70,7 +72,7 @@ for ($i=1; $i <= $count; $i++)
 	$content = get_content($structure);
 	
 	//date reformating 
-	$post_date = date('Y-m-d H:i:s', time($ddate) + ($time_difference * 3600));
+	$post_date = date('Y-m-d H:i:s', time($ddate));
 	$post_date_gmt = gmdate('Y-m-d H:i:s', time($ddate) );
 	
 	//filter content
@@ -158,7 +160,8 @@ $pop3->quit();
 //tear apart the meta part for useful information
 function get_content ($part) 
 {
-	//global $photosdir;
+	global $photosdir;
+	global $filesdir;
 	$photosdir = 'wp-photos/';
 	$filesdir = 'wp-filez/';
 	
@@ -176,12 +179,14 @@ function get_content ($part)
 			if ($part->ctype_secondary=='enriched') {
 				
 			} else {
-				$meta_return = htmlentities($part->body) ."\n";
+				// jny $meta_return = htmlentities($part->body) ."\n";
+				$meta_return = $part->body ."\n";
 			}
 			break;
 
 		case 'image':
-			$filename = $photosdir . rand() . '.' . $part->ctype_secondary;
+			// jny $filename = $photosdir . rand() . '.' . $part->ctype_secondary;
+			$filename = $photosdir . rand() . '-' . $part->ctype_parameters['name'];
 			$fp = fopen($filename, 'w');
 			fwrite($fp, $part->body);
 			fclose($fp);
