@@ -1,3 +1,7 @@
+<html>
+	<head></head>
+<body>
+<pre>
 <?php
 
    /**
@@ -18,12 +22,18 @@ require(dirname(__FILE__) . '/wp-config.php');
 require_once(ABSPATH.WPINC.'/class-pop3.php');
 
 require_once (dirname(__FILE__) . '/mimedecode.php');
+require_once (dirname(__FILE__) . '/wp-content/plugins/mmsblog.php');
 
 error_reporting(2037);
 
 $time_difference = get_settings('gmt_offset');
-$photosdir = 'wp-photos/';
-$filesdir = 'wp-filez/';
+$photosdir = 'wp-photos';
+$thumbsdir = 'wp-thumbs';
+$filesdir = 'wp-filez';
+$tempdir = 'wp-temp';
+$_CONVERT = "/sw/bin/convert";
+$_THUMBPARS = "-geometry 320x320 -sharpen 2x1";
+$_NORPARS = "-geometry '640x480>' -sharpen 2x1";
 
 //retrieve mail
 $pop3 = new POP3();
@@ -43,9 +53,11 @@ for ($i=1; $i <= $count; $i++)
 	$boundary = '';
 	$bodysignal = 0;
 	
+	print "Message $i of $count<br>\n";
+	
 	$input = implode ('',$pop3->get($i));
-	
-	
+
+
 	if(!$pop3->delete($i)) {
 		echo '<p>Oops '.$pop3->ERROR.'</p></div>';
 		$pop3->reset();
@@ -53,6 +65,7 @@ for ($i=1; $i <= $count; $i++)
 	} else {
 		echo "<p>Mission complete, message <strong>$i</strong> deleted.</p>";
 	}
+
 	
 	//decode the mime
 	$params['include_bodies'] = true;
@@ -60,15 +73,24 @@ for ($i=1; $i <= $count; $i++)
 	$params['decode_headers'] = true;
 	$params['input'] = $input;
 	$structure = Mail_mimeDecode::decode($params);
-	
-	$subject = trim($structure->headers['subject']);
+    print_r($structure->headers);
+    // print "Input:\n$input\n";
+
+    if (preg_match('/utf-8/i', $structure->headers['content-type']) ||
+        preg_match('/Subject: .*=\?UTF-8\?/i', $input)) {
+        print "UTF8 subject\n";
+		$subject = $structure->headers['subject'];
+	} else {
+		$subject = utf8_encode($structure->headers['subject']);
+	}
+
 	$ddate = trim($structure->headers['date']);
 	$from = trim($structure->headers['from']);
 	if (preg_match('/^[^<>]+<([^<>]+)>$/',$from,$matches))
 	{
 		$from = $matches[1];
 	}
-	print_r ($structure);
+	// print_r ($structure);
 	$content = get_content($structure);
 	
 	//date reformating 
@@ -99,14 +121,22 @@ for ($i=1; $i <= $count; $i++)
 	if (empty($post_categories))
 		$post_categories[] = get_settings('default_category');
 	
-	//report
-	// print '<p><b>Mail Format</b>: ' . $mailformat . '</p>' . "\n";
-	print '<p><b>From</b>: ' . $from . '<br />' . "\n";
-	print '<b>Date</b>: ' . $post_date . '<br />' . "\n";
-	print '<b>Date GMT</b>: ' . $post_date_gmt . '<br />' . "\n";
-	print '<b>Category</b>: ' . $post_categories[0] . '<br />' . "\n";
-	print '<b>Subject</b>: ' . $subject . '<br />' . "\n";
-	print '<b>Posted content:</b></p><hr />' . $content . '<hr />';
+	// report
+	print 'Mail Format: ' . $mailformat . "\n";
+	print 'From: ' . $from . "\n";
+	print 'Date: ' . $post_date . "\n";
+	// print '<b>Date GMT</b>: ' . $post_date_gmt . '<br />' . "\n";
+	print 'Category: ' . $post_categories[0] . "\n";
+	print 'Subject: ' . $subject . "\n";
+	// print '<b>Posted content:</b></p><hr />' . $content . '<hr />';
+
+	// First check the table of email aliases
+	$sql = 'SELECT wp_email FROM mmsblog_alias WHERE email=\'' . addslashes($from) . '\'';
+	$wp_email = $wpdb->get_var($sql);
+	if ($wp_email) {
+	   debug_p("Email from $from corresponds to $wp_email");
+	   $from = $wp_email;
+    }
 	
 	$sql = 'SELECT id FROM '.$tableusers.' WHERE user_email=\'' . addslashes($from) . '\'';
 	if (!$poster = $wpdb->get_var($sql))
@@ -127,20 +157,23 @@ for ($i=1; $i <= $count; $i++)
 	
 	//generate sql	
 	$sql = 'INSERT INTO '.$tableposts.' ('. implode(',',array_keys($details)) .') VALUES (\''. implode('\',\'',array_map('addslashes',$details)) . '\')';
+	// debug_p($sql);
 
 	$result = $wpdb->query($sql);
 	$post_ID = $wpdb->insert_id;
+	debug_p("post_ID $post_ID");
 
-	do_action('publish_post', $post_ID);
+	// TODO: Fix this!!! do_action('publish_post', $post_ID);
 	do_action('publish_phone', $post_ID);
 	pingback($content, $post_ID);
-
+	
 	foreach ($post_categories as $post_category)
 	{
 		$post_category = intval($post_category);
 
 		// Double check it's not there already
 		$exists = $wpdb->get_row("SELECT * FROM $tablepost2cat WHERE post_id = $post_ID AND category_id = $post_category");
+		debug_p("exists = $exists");
 
 		 if (!$exists && $result) { 
 			$wpdb->query("
@@ -157,13 +190,93 @@ $pop3->quit();
 
 /** FUNCTIONS **/
 
+function get_image($part) {
+	global $_CONVERT;
+	global $_THUMBPARS;
+	global $_NORPARS;
+
+	$random = rand();
+	$filename = get_tempname($random . '-' . $part->ctype_parameters['name']);
+	str_replace(' ', '', $filename);
+	$normalname = get_filename($random . '-' . $part->ctype_parameters['name']);
+	str_replace(' ', '', $normalname);
+	$thumbname = get_thumbname($random . '-' . $part->ctype_parameters['name']);
+	str_replace(' ', '', $thumbname);
+	write_file($filename, $part);
+	exec("$_CONVERT $_NORPARS '$filename' '$normalname'", $res);
+	print_r($res);
+	exec("$_CONVERT $_THUMBPARS '$filename' '$thumbname'", $res);
+	print_r($res);
+	unlink("'$filename'");
+	$ret = mmsblog_get_picture_tag($normalname, $thumbname);
+	return $ret;
+}
+
+function get_video($part) {
+	global $photosdir;
+
+	$random = rand();
+	$basename = $random . '-' . $part->ctype_parameters['name'];
+	str_replace(' ', '', $basename);
+	$filename = get_filename($basename);
+	write_file($filename, $part);
+	$ret = mmsblog_get_video_controller_tag("$photosdir/ref.mov", $basename);
+	return $ret;
+}
+
+function get_text($part) {
+	$ret = "";
+	//dump the enriched stuff
+	if ($part->ctype_secondary == 'enriched') {
+	} else {
+		if (preg_match('/8859/', $part->ctype_parameters['charset'])) {
+			$ret = utf8_encode($part->body) ."\n";
+		} else {
+			$ret = $part->body ."\n";
+		}
+	}
+	return $ret;
+}
+
+function get_ext($name) {
+	$ext = "";
+	preg_match('/\.([^\.]+)$/i', $name, $matches);
+	if (is_array($matches) && isset($matches[0])) {
+		$ext = $matches[0];
+	}
+	return $ext;
+}
+
+function mmsblog_is_image($name) {
+	$ext = get_ext($name);
+	$is_image = preg_match('/jpg|jpeg|gif|png/i', $ext);
+	return $is_image;
+}
+
+function mmsblog_is_video($name) {
+	$ext = get_ext($name);
+	$is_video = preg_match('/mov|avi|3gp|mpg|mpeg/i', $ext);
+	return $is_video;
+}
+
+function get_filename($file) {
+	global $photosdir;
+	return($photosdir . "/" . $file);
+}
+
+function get_thumbname($file) {
+	global $thumbsdir;
+	return($thumbsdir . "/" . $file);
+}
+
+function get_tempname($file) {
+	global $tempdir;
+	return($tempdir . "/" . $file);	
+}
+
 //tear apart the meta part for useful information
 function get_content ($part) 
 {
-	global $photosdir;
-	global $filesdir;
-	$photosdir = 'wp-photos/';
-	$filesdir = 'wp-filez/';
 	
 	switch ($part->ctype_primary)
 	{
@@ -175,35 +288,44 @@ function get_content ($part)
 			}
 			break;
 		case 'text':
-			//dump the enriched stuff
-			if ($part->ctype_secondary=='enriched') {
-				
-			} else {
-				// jny $meta_return = htmlentities($part->body) ."\n";
-				$meta_return = $part->body ."\n";
-			}
+			$meta_return = get_text($part);
+			debug_p("posting $meta_return");
 			break;
-
 		case 'image':
-			// jny $filename = $photosdir . rand() . '.' . $part->ctype_secondary;
-			$filename = $photosdir . rand() . '-' . $part->ctype_parameters['name'];
-			$fp = fopen($filename, 'w');
-			fwrite($fp, $part->body);
-			fclose($fp);
-			$meta_return = '<img src="' . $filename . '" alt="' . $part->ctype_parameters['name'] . '"/>' . "\n";
+			$meta_return = get_image($part);
+			debug_p("posting $meta_return");
+			break;
+		case 'video':
+			$meta_return = get_video($part);
+			debug_p("posting $meta_return");
 			break;
 		case 'application':
-			//pgp signature
-			if ( $part->ctype_secondary == 'pgp-signature' ) {break;}
-			//other attachments
-			$filename = $filesdir . $part->ctype_parameters['name'];
-			$fp = fopen($filename, 'w');
-			fwrite($fp, $part->body);
-			fclose($fp);
-			$meta_return = '<a href="' . $filename . '">' . $part->ctype_parameters['name'] . '</a>' . "\n";
+			// try to figure out the type from the filename
+			$name = $part->ctype_parameters['name'];
+			if (mmsblog_is_image($name)) {
+				$meta_return = get_image($part);
+			} elseif (mmsblog_is_video($name)) {
+				$meta_return = get_video($part);
+			} else {
+				$meta_return = "";
+			}
+			debug_p("posting $meta_return");
 			break;
-	}		
+	}
+	// print '\n----------------------------------\n';
+	// print_r($part);
+
 	return $meta_return;
 }
 
+function write_file($filename, $part) {
+	$fp = fopen($filename, 'w');
+	fwrite($fp, $part->body);
+	fclose($fp);
+}
+
 // end of script
+?>
+</body>
+</pre>
+</html>

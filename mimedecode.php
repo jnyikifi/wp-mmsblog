@@ -64,7 +64,7 @@ require_once 'PEAR.php';
 *    perhaps even message/partial.
 *
 * @author  Richard Heyes <richard@phpguru.org>
-* @version $Revision: 1.1 $
+* @version $Revision: 1.2 $
 * @package Mail
 */
 
@@ -265,6 +265,7 @@ class Mail_mimeDecode extends PEAR
                     $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding) : $body) : null;
                     break;
 
+                case 'multipart/appledouble':
                 case 'multipart/parallel':
                 case 'multipart/report': // RFC1892
                 case 'multipart/signed': // PGP
