@@ -14,7 +14,7 @@ INSERT INTO mmsblog_alias (email, wp_email) VALUES
     ("jny@iki.fi", "jny@lokala.org"),
     ("pni@skrubu.net", "pni@iki.fi"),
     ("+358400543880@mms.soneramail.com", "pni@iki.fi"),
-    ("+358503571457/TYPE=PLMN@mms.radiolinja.fi", "swana@iki.fi"),
+    ("+358503571457/TYPE=PLMN@mmsc.radiolinja.fi", "swana@iki.fi"),
     ("swana@cc.hut.fi", "swana@iki.fi"),
     ("ngronqvist@hotmail.com", "nette@iki.fi"),
     ("+358405019766\@mms.soneramail.com", "nette@iki.fi"),
