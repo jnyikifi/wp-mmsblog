@@ -11,10 +11,10 @@ Author URI: http://lokala.org/
 add_filter('the_content', 'mmsblog_tags');
 
 function mmsblog_tags($content) {
-    $ret = preg_replace('/@@mmsblog_pic (\S+) (\S+)@@/', 
+    $ret = preg_replace('/@@mmsblogPic (\S+) (\S+)@@/', 
             mmsblog_get_picture('\\1', '\\2'), 
             $content);
-    $ret = preg_replace('/@@mmsblog_video (\S+) (\S+)@@/', 
+    $ret = preg_replace('/@@mmsblogVideo (\S+) (\S+)@@/', 
             mmsblog_get_video_controller('\\1', '\\2'), 
             $ret);
     return $ret;
@@ -22,12 +22,11 @@ function mmsblog_tags($content) {
 }
 
 function mmsblog_get_picture_tag($file, $thumb) {
-    $ret = "@@mmsblog_pic $file $thumb@@";
+    $ret = "@@mmsblogPic $file $thumb@@";
     return $ret;
 }
 
 function mmsblog_get_picture($file, $thumb) {
-    // debug_p("mmsblog_get_picture($file, $thumb)");
     $ret = '';
     $ret .= '<div id="leftbox">';
     $ret .= '<a href="#" onClick="return window.open(\'mmsblog-show-pic.php?pic=';
@@ -43,7 +42,7 @@ function mmsblog_picture($file, $thumb) {
 }
 
 function mmsblog_get_video_controller_tag($refmovie, $movie) {
-    $ret = "@@mmsblog_video $refmovie $movie@@";
+    $ret = "@@mmsblogVideo $refmovie $movie@@";
     return $ret;
 }
 
@@ -73,10 +72,7 @@ function mmsblog_video($refmovie, $movie) {
     print mmsblog_get_video_controller($refmovie, $movie) . "\n";
 }
 
-
 function debug_p($txt) {
 	print "$txt\n";
 }
-
-
 ?>

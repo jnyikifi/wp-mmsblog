@@ -11,6 +11,7 @@
     *
     * Copyright (c) 2004 - John B. Hewitt - jb@stcpl.com.au
     * Copyright (c) 2004 - Dan Cech - dcech@lansmash.com
+    * Copyright (c) 2004 - Kristoffer Nyberg jny@lokala.org
     *
     * Licensed under the GNU GPL. For full terms see the file COPYING.
     *
@@ -18,9 +19,7 @@
     */
 	
 require(dirname(__FILE__) . '/wp-config.php');
-
 require_once(ABSPATH.WPINC.'/class-pop3.php');
-
 require_once (dirname(__FILE__) . '/mimedecode.php');
 require_once (dirname(__FILE__) . '/wp-content/plugins/mmsblog.php');
 
@@ -38,34 +37,30 @@ $_NORPARS = "-geometry '640x480>' -sharpen 2x1";
 //retrieve mail
 $pop3 = new POP3();
 
-if (!$pop3->connect(get_settings('mailserver_url'), get_settings('mailserver_port'))) :
+if (!$pop3->connect(get_settings('mailserver_url'), get_settings('mailserver_port'))) {
 	echo "Ooops $pop3->ERROR <br />\n";
 	exit;
-endif;
+}
 
 $count = $pop3->login(get_settings('mailserver_login'), get_settings('mailserver_pass'));
 if (0 == $count) die(__('There doesn&#8217;t seem to be any new mail.'));
 
-for ($i=1; $i <= $count; $i++)
-{
-	//variables
+for ($i=1; $i <= $count; $i++) {
 	$content_type = '';
 	$boundary = '';
 	$bodysignal = 0;
 	
-	print "Message $i of $count<br>\n";
+	print "Message $i of $count\n";
 	
-	$input = implode ('',$pop3->get($i));
-
+	$input = implode('', $pop3->get($i));
 
 	if(!$pop3->delete($i)) {
-		echo '<p>Oops '.$pop3->ERROR.'</p></div>';
+		echo 'Oops ' . $pop3->ERROR . "\n";
 		$pop3->reset();
 		exit;
 	} else {
-		echo "<p>Mission complete, message <strong>$i</strong> deleted.</p>";
+		echo "Mission complete, message $i deleted.\n";
 	}
-
 	
 	//decode the mime
 	$params['include_bodies'] = true;
@@ -73,8 +68,7 @@ for ($i=1; $i <= $count; $i++)
 	$params['decode_headers'] = true;
 	$params['input'] = $input;
 	$structure = Mail_mimeDecode::decode($params);
-    print_r($structure->headers);
-    // print "Input:\n$input\n";
+	print_r($structure->headers);
 
     if (preg_match('/utf-8/i', $structure->headers['content-type']) ||
         preg_match('/Subject: .*=\?UTF-8\?/i', $input)) {
@@ -83,14 +77,15 @@ for ($i=1; $i <= $count; $i++)
 	} else {
 		$subject = utf8_encode($structure->headers['subject']);
 	}
+	if (!$subject) {
+	   $subject = "MMS";
+    }
 
 	$ddate = trim($structure->headers['date']);
 	$from = trim($structure->headers['from']);
-	if (preg_match('/^[^<>]+<([^<>]+)>$/',$from,$matches))
-	{
+	if (preg_match('/^[^<>]+<([^<>]+)>$/', $from, $matches)) {
 		$from = $matches[1];
 	}
-	// print_r ($structure);
 	$content = get_content($structure);
 	
 	//date reformating 
@@ -98,22 +93,21 @@ for ($i=1; $i <= $count; $i++)
 	$post_date_gmt = gmdate('Y-m-d H:i:s', time($ddate) );
 	
 	//filter content
-	$search = array (
+	$search = array(
 		'/ (\n|\r\n|\r)/',
 		'/(\n|\r\n|\r)/'
 	);
 	
-	$replace = array (
+	$replace = array(
 		' ',
 		"\n"
 	);
 	
 	// strip extra line breaks
-	$content = preg_replace($search,$replace,trim($content));
+	$content = preg_replace($search, $replace, trim($content));
 	
 	//try and determine category
-	if ( preg_match('/.*\[(.+)\](.+)/', $subject, $matches) )
-	{
+	if (preg_match('/.*\[(.+)\](.+)/', $subject, $matches)) {
 		$post_categories[0] = $matches[1];
 		$subject = $matches[2];
 	}
@@ -122,26 +116,25 @@ for ($i=1; $i <= $count; $i++)
 		$post_categories[] = get_settings('default_category');
 	
 	// report
-	print 'Mail Format: ' . $mailformat . "\n";
-	print 'From: ' . $from . "\n";
-	print 'Date: ' . $post_date . "\n";
-	// print '<b>Date GMT</b>: ' . $post_date_gmt . '<br />' . "\n";
-	print 'Category: ' . $post_categories[0] . "\n";
-	print 'Subject: ' . $subject . "\n";
-	// print '<b>Posted content:</b></p><hr />' . $content . '<hr />';
+	print "\n  Mail Format: " . $mailformat . "\n";
+	print '  From: ' . $from . "\n";
+	print '  Date: ' . $post_date . "\n";
+	// print '  Date GMT: ' . $post_date_gmt . "\n";
+	print '  Category: ' . $post_categories[0] . "\n";
+	print '  Subject: ' . $subject . "\n";
+	// print '  Posted content:' . $content . "\n";
 
 	// First check the table of email aliases
 	$sql = 'SELECT wp_email FROM mmsblog_alias WHERE email=\'' . addslashes($from) . '\'';
 	$wp_email = $wpdb->get_var($sql);
 	if ($wp_email) {
-	   debug_p("Email from $from corresponds to $wp_email");
+	   debug_p("  Email from $from corresponds to $wp_email");
 	   $from = $wp_email;
     }
 	
-	$sql = 'SELECT id FROM '.$tableusers.' WHERE user_email=\'' . addslashes($from) . '\'';
-	if (!$poster = $wpdb->get_var($sql))
-	{
-		echo 'invalid sender: ' . htmlentities($from) . "<br />\n";
+	$sql = 'SELECT id FROM ' . $tableusers . ' WHERE user_email=\'' . addslashes($from) . '\'';
+	if (!$poster = $wpdb->get_var($sql)) {
+		echo 'invalid sender: ' . htmlentities($from) . "\n";
 		continue;
 	}
 	
@@ -156,8 +149,7 @@ for ($i=1; $i <= $count; $i++)
 	);
 	
 	//generate sql	
-	$sql = 'INSERT INTO '.$tableposts.' ('. implode(',',array_keys($details)) .') VALUES (\''. implode('\',\'',array_map('addslashes',$details)) . '\')';
-	// debug_p($sql);
+	$sql = 'INSERT INTO ' . $tableposts . ' (' . implode(',', array_keys($details)) . ') VALUES (\'' .  implode('\',\'', array_map('addslashes', $details)) . '\')';
 
 	$result = $wpdb->query($sql);
 	$post_ID = $wpdb->insert_id;
@@ -167,8 +159,7 @@ for ($i=1; $i <= $count; $i++)
 	do_action('publish_phone', $post_ID);
 	pingback($content, $post_ID);
 	
-	foreach ($post_categories as $post_category)
-	{
+	foreach ($post_categories as $post_category) {
 		$post_category = intval($post_category);
 
 		// Double check it's not there already
@@ -188,20 +179,18 @@ for ($i=1; $i <= $count; $i++)
 
 $pop3->quit();
 
-/** FUNCTIONS **/
-
 function get_image($part) {
 	global $_CONVERT;
 	global $_THUMBPARS;
 	global $_NORPARS;
 
 	$random = rand();
-	$filename = get_tempname($random . '-' . $part->ctype_parameters['name']);
-	str_replace(' ', '', $filename);
-	$normalname = get_filename($random . '-' . $part->ctype_parameters['name']);
-	str_replace(' ', '', $normalname);
-	$thumbname = get_thumbname($random . '-' . $part->ctype_parameters['name']);
-	str_replace(' ', '', $thumbname);
+	$attname = get_attachment_name($part);
+	$filename = get_tempname($random . '-' . $attname);
+	$normalname = get_filename($random . '-' . $attname);
+	$normalname = preg_replace('/ |\_/', '', $normalname);
+	$thumbname = get_thumbname($random . '-' . $attname);
+	$thumbname = preg_replace('/ |\_/', '', $thumbname);
 	write_file($filename, $part);
 	exec("$_CONVERT $_NORPARS '$filename' '$normalname'", $res);
 	print_r($res);
@@ -216,9 +205,11 @@ function get_video($part) {
 	global $photosdir;
 
 	$random = rand();
-	$basename = $random . '-' . $part->ctype_parameters['name'];
-	str_replace(' ', '', $basename);
+	$attname = get_attachment_name($part);
+	$basename = $random . '-' . $attname;
+	$basename = preg_replace('/ |\_/', '', $basename);
 	$filename = get_filename($basename);
+	$filename = preg_replace('/ |\_/', '', $filename);
 	write_file($filename, $part);
 	$ret = mmsblog_get_video_controller_tag("$photosdir/ref.mov", $basename);
 	return $ret;
@@ -274,34 +265,49 @@ function get_tempname($file) {
 	return($tempdir . "/" . $file);	
 }
 
+function get_attachment_name($part) {
+	$name = "";
+	if (is_array($part->ctype_parameters) && isset($part->ctype_parameters['name'])) {
+		$name = $part->ctype_parameters['name'];
+	} elseif (is_array($part->d_parameters) && isset($part->d_parameters['filename'])) {
+		$name = $part->d_parameters['filename'];
+    } elseif (isset($part->headers['content-location'])) {
+		$name = $part->headers['content-location'];
+	} else {
+		debug_p("Bad: could not get attachment name");
+		print_r($part->headers);
+	}
+	return $name;
+}
+
 //tear apart the meta part for useful information
-function get_content ($part) 
-{
+function get_content ($part) {
 	
-	switch ($part->ctype_primary)
-	{
+	switch ($part->ctype_primary) {
 		case 'multipart':
 			$meta_return = '';
-			foreach ($part->parts as $section)
-			{
+			foreach ($part->parts as $section) {
 				$meta_return .= get_content($section);
 			}
 			break;
 		case 'text':
 			$meta_return = get_text($part);
+			debug_part($part);
 			debug_p("posting $meta_return");
 			break;
 		case 'image':
 			$meta_return = get_image($part);
+			debug_part($part);
 			debug_p("posting $meta_return");
 			break;
 		case 'video':
 			$meta_return = get_video($part);
+			debug_part($part);
 			debug_p("posting $meta_return");
 			break;
 		case 'application':
 			// try to figure out the type from the filename
-			$name = $part->ctype_parameters['name'];
+			$name = get_attachment_name($part);
 			if (mmsblog_is_image($name)) {
 				$meta_return = get_image($part);
 			} elseif (mmsblog_is_video($name)) {
@@ -309,13 +315,16 @@ function get_content ($part)
 			} else {
 				$meta_return = "";
 			}
+			debug_part($part);
 			debug_p("posting $meta_return");
 			break;
 	}
-	// print '\n----------------------------------\n';
-	// print_r($part);
-
 	return $meta_return;
+}
+
+function debug_part($part) {
+	$part->body = "";
+	print_r($part);
 }
 
 function write_file($filename, $part) {
@@ -323,9 +332,7 @@ function write_file($filename, $part) {
 	fwrite($fp, $part->body);
 	fclose($fp);
 }
-
-// end of script
 ?>
-</body>
 </pre>
+</body>
 </html>
