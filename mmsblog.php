@@ -28,12 +28,12 @@ function mmsblog_get_picture_tag($file, $thumb) {
 
 function mmsblog_get_picture($file, $thumb) {
     $ret = '';
-    $ret .= '<div id="leftbox">';
+    $ret .= '<span class="leftbox">';
     $ret .= '<a href="#" onClick="return window.open(\'mmsblog-show-pic.php?pic=';
     $ret .= $file;
     $ret .= '\', \'Picture\', \'width=720,height=560,scrollbars=no\')">';
     $ret .= '<img src="' . $thumb . '"/></a>';
-    $ret .= '</div>';
+    $ret .= '</span>';
     return $ret;
 }
 
@@ -48,7 +48,7 @@ function mmsblog_get_video_controller_tag($refmovie, $movie) {
 
 function mmsblog_get_video_controller($refmovie, $movie) {
     $ret = '';
-    $ret .= '<div id="leftbox">';
+    $ret .= '<span class="leftbox">';
 	$ret .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" ';
 	$ret .= 'width="320" height="256" ';
 	$ret .= 'codebase="http://www.apple.com/qtactivex/qtplugin.cab"> ';
@@ -64,7 +64,7 @@ function mmsblog_get_video_controller($refmovie, $movie) {
 	$ret .= 'scale="aspect" ';
 	$ret .= 'pluginspage="http://www.apple.com/quicktime/download/"> ';
 	$ret .= '</embed> </object>';
-	$ret .= '</div>';
+	$ret .= '</span>';
 	return $ret;
 }
 
