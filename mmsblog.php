@@ -22,7 +22,7 @@ function mmsblog_tags($content) {
 }
 
 function mmsblog_get_picture_tag($file, $thumb) {
-    $ret = "@@mmsblogPic $file $thumb@@";
+    $ret = "@@mmsblogPic $file $thumb@@ ";
     return $ret;
 }
 
@@ -42,7 +42,7 @@ function mmsblog_picture($file, $thumb) {
 }
 
 function mmsblog_get_video_controller_tag($refmovie, $movie) {
-    $ret = "@@mmsblogVideo $refmovie $movie@@";
+    $ret = "@@mmsblogVideo $refmovie $movie@@ ";
     return $ret;
 }
 
@@ -52,12 +52,12 @@ function mmsblog_get_video_controller($refmovie, $movie) {
 	$ret .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" ';
 	$ret .= 'width="320" height="256" ';
 	$ret .= 'codebase="http://www.apple.com/qtactivex/qtplugin.cab"> ';
-	$ret .= '<param name="src" value="' . $refmovie . '"> ';
-	$ret .= '<param name="href" value="' . $movie . '"> ';
-	$ret .= '<param name="target" value="myself"> ';
-	$ret .= '<param name="autoplay" value="true"> ';
-	$ret .= '<param name="controller" value="false"> ';
-	$ret .= '<param name="scale" value="aspect"> ';
+	$ret .= '<param name="src" value="' . $refmovie . '"/> ';
+	$ret .= '<param name="href" value="' . $movie . '"/> ';
+	$ret .= '<param name="target" value="myself"/> ';
+	$ret .= '<param name="autoplay" value="true"/> ';
+	$ret .= '<param name="controller" value="false"/> ';
+	$ret .= '<param name="scale" value="aspect"/> ';
 	$ret .= '<embed color="black" src="' . $refmovie . '" ';
 	$ret .= 'href="' . $movie . '" ';
 	$ret .= 'target="myself" width="320" height="256" controller="false" ';

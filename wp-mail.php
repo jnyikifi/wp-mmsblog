@@ -30,7 +30,7 @@ $photosdir = 'wp-photos';
 $thumbsdir = 'wp-thumbs';
 $filesdir = 'wp-filez';
 $tempdir = 'wp-temp';
-$_CONVERT = "/sw/bin/convert";
+$_CONVERT = "/usr/bin/convert";
 $_THUMBPARS = "-geometry 320x320 -sharpen 2x1";
 $_NORPARS = "-geometry '640x480>' -sharpen 2x1";
 
@@ -192,11 +192,13 @@ function get_image($part) {
 	$thumbname = get_thumbname($random . '-' . $attname);
 	$thumbname = preg_replace('/ |\_/', '', $thumbname);
 	write_file($filename, $part);
+	print("$_CONVERT $_NORPARS '$filename' '$normalname'");
 	exec("$_CONVERT $_NORPARS '$filename' '$normalname'", $res);
 	print_r($res);
+	print("$_CONVERT $_THUMBPARS '$filename' '$thumbname'");
 	exec("$_CONVERT $_THUMBPARS '$filename' '$thumbname'", $res);
 	print_r($res);
-	unlink("'$filename'");
+	unlink("$filename");
 	$ret = mmsblog_get_picture_tag($normalname, $thumbname);
 	return $ret;
 }
@@ -306,9 +308,13 @@ function get_content ($part) {
 			debug_p("posting $meta_return");
 			break;
 		case 'application':
+		    $name = get_attachment_name($part);
+		    if ($part->ctype_secondary == "applefile") {
+		        debug_p("  application/applefile encountered, skipping");
+		        $meta_return = "";
+		    }
 			// try to figure out the type from the filename
-			$name = get_attachment_name($part);
-			if (mmsblog_is_image($name)) {
+			elseif (mmsblog_is_image($name)) {
 				$meta_return = get_image($part);
 			} elseif (mmsblog_is_video($name)) {
 				$meta_return = get_video($part);
