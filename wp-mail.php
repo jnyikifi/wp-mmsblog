@@ -213,7 +213,21 @@ function get_video($part) {
 	$filename = get_filename($basename);
 	$filename = preg_replace('/ |\_/', '', $filename);
 	write_file($filename, $part);
-	$ret = mmsblog_get_video_controller_tag("$photosdir/ref.mov", $basename);
+	$ret = mmsblog_get_video_controller_tag("$photosdir/ref.mov", $basename, '256');
+	return $ret;
+}
+
+function get_audio($part) {
+	global $photosdir;
+
+	$random = rand();
+	$attname = get_attachment_name($part);
+	$basename = $random . '-' . $attname;
+	$basename = preg_replace('/ |\_/', '', $basename);
+	$filename = get_filename($basename);
+	$filename = preg_replace('/ |\_/', '', $filename);
+	write_file($filename, $part);
+    $ret = mmsblog_get_video_controller_tag("$photosdir/audio-refmovie.mov", $basename, '55');
 	return $ret;
 }
 
@@ -250,6 +264,12 @@ function mmsblog_is_video($name) {
 	$ext = get_ext($name);
 	$is_video = preg_match('/mov|avi|3gp|mpg|mpeg/i', $ext);
 	return $is_video;
+}
+
+function mmsblog_is_audio($name) {
+	$ext = get_ext($name);
+	$is_audio = preg_match('/amr|mp3|aac/i', $ext);
+	return $is_audio;
 }
 
 function get_filename($file) {
@@ -326,12 +346,21 @@ function get_content ($part) {
 				$meta_return = get_image($part);
 			} elseif (mmsblog_is_video($name)) {
 				$meta_return = get_video($part);
+			} elseif (mmsblog_is_audio($name)) {
+				$meta_return = get_audio($part);
 			} else {
 				$meta_return = "";
 			}
 			debug_part($part);
 			debug_p("posting $meta_return");
 			break;
+		case 'audio':
+		    $name = get_attachment_name($part);
+		    if (mmsblog_is_audio($name)) {
+			    $meta_return = get_audio($part);
+			} else {
+			    $meta_return = '';
+			}
 	}
 	return $meta_return;
 }

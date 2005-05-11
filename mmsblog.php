@@ -15,7 +15,10 @@ function mmsblog_tags($content) {
             mmsblog_get_picture('\\1', '\\2'), 
             $content);
     $ret = preg_replace('/@@mmsblogVideo (\S+) (\S+)@@/', 
-            mmsblog_get_video_controller('\\1', '\\2'), 
+            mmsblog_get_video_controller('\\1', '\\2', '256'), 
+            $ret);
+    $ret = preg_replace('/@@mmsblogVideo (\S+) (\S+) (\S+)@@/', 
+            mmsblog_get_video_controller('\\1', '\\2', '\\3'), 
             $ret);
     return $ret;
     
@@ -41,16 +44,17 @@ function mmsblog_picture($file, $thumb) {
     print mmsblog_get_picture($file, $thumb) . "\n";
 }
 
-function mmsblog_get_video_controller_tag($refmovie, $movie) {
-    $ret = "@@mmsblogVideo $refmovie $movie@@ ";
+function mmsblog_get_video_controller_tag($refmovie, $movie, $height) {
+    $ret = "@@mmsblogVideo $refmovie $movie $height@@ ";
     return $ret;
 }
 
-function mmsblog_get_video_controller($refmovie, $movie) {
+function mmsblog_get_video_controller($refmovie, $movie, $height) {
+    $width = 320;
     $ret = '';
     $ret .= '<span class="leftbox">';
 	$ret .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" ';
-	$ret .= 'width="320" height="256" ';
+	$ret .= "width=\"$width\" height=\"$height\" ";
 	$ret .= 'codebase="http://www.apple.com/qtactivex/qtplugin.cab"> ';
 	$ret .= '<param name="src" value="' . $refmovie . '"/> ';
 	$ret .= '<param name="href" value="' . $movie . '"/> ';
@@ -60,16 +64,12 @@ function mmsblog_get_video_controller($refmovie, $movie) {
 	$ret .= '<param name="scale" value="aspect"/> ';
 	$ret .= '<embed color="black" src="' . $refmovie . '" ';
 	$ret .= 'href="' . $movie . '" ';
-	$ret .= 'target="myself" width="320" height="256" controller="false" ';
+	$ret .= "target=\"myself\" width=\"$width\" height=\"$height\" controller=\"false\" ";
 	$ret .= 'scale="aspect" ';
 	$ret .= 'pluginspage="http://www.apple.com/quicktime/download/"> ';
 	$ret .= '</embed> </object>';
 	$ret .= '</span>';
 	return $ret;
-}
-
-function mmsblog_video($refmovie, $movie) {
-    print mmsblog_get_video_controller($refmovie, $movie) . "\n";
 }
 
 function debug_p($txt) {
