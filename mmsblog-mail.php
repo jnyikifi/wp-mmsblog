@@ -20,6 +20,7 @@
 	
 require(dirname(__FILE__) . '/wp-config.php');
 require_once(ABSPATH.WPINC.'/class-pop3.php');
+// require_once (dirname(__FILE__) . '/Mail_Mime-1.3.1/mimeDecode.php');
 require_once (dirname(__FILE__) . '/mimedecode.php');
 require_once (dirname(__FILE__) . '/wp-content/plugins/mmsblog.php');
 
@@ -31,6 +32,7 @@ $thumbsdir = 'wp-thumbs';
 $filesdir = 'wp-filez';
 $tempdir = 'wp-temp';
 $_CONVERT = "/usr/bin/convert";
+// $_CONVERT = "/sw/bin/convert";
 $_THUMBPARS = "-geometry 320x320 -sharpen 2x1";
 $_NORPARS = "-geometry '640x480>' -sharpen 2x1";
 
@@ -54,14 +56,14 @@ for ($i=1; $i <= $count; $i++) {
 	
 	$input = implode('', $pop3->get($i));
 
-	if(!$pop3->delete($i)) {
-		echo 'Oops ' . $pop3->ERROR . "\n";
-		$pop3->reset();
-		exit;
+	if (!$pop3->delete($i)) {
+	   echo 'Oops ' . $pop3->ERROR . "\n";
+	   $pop3->reset();
+	   exit;
 	} else {
-		echo "Mission complete, message $i deleted.\n";
+	   echo "Mission complete, message $i deleted.\n";
 	}
-	
+
 	//decode the mime
 	$params['include_bodies'] = true;
 	$params['decode_bodies'] = true;
@@ -122,7 +124,7 @@ for ($i=1; $i <= $count; $i++) {
 	// print '  Date GMT: ' . $post_date_gmt . "\n";
 	print '  Category: ' . $post_categories[0] . "\n";
 	print '  Subject: ' . $subject . "\n";
-	// print '  Posted content:' . $content . "\n";
+	print '  Posted content:' . $content . "\n";
 
 	// First check the table of email aliases
 	$sql = 'SELECT wp_email FROM mmsblog_alias WHERE email=\'' . addslashes($from) . '\'';
@@ -148,7 +150,8 @@ for ($i=1; $i <= $count; $i++) {
 		'post_modified_gmt'	=> $post_date_gmt
 	);
 	
-	//generate sql	
+	//generate sql
+
 	$sql = 'INSERT INTO ' . $tableposts . ' (' . implode(',', array_keys($details)) . ') VALUES (\'' .  implode('\',\'', array_map('addslashes', $details)) . '\')';
 
 	$result = $wpdb->query($sql);
