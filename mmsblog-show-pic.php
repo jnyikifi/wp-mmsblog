@@ -11,10 +11,6 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=<?php bloginfo('charset'); ?>" />
 	<meta name="generator" content="WordPress <?php bloginfo('version'); ?>" /> <!-- leave this for stats -->
 
-	<style type="text/css" media="screen">
-		@import url( <?php echo get_settings('siteurl'); ?>/wp-layout.css );
-	</style>
-	
 	<?php wp_head(); ?>
 </head>
 
