@@ -31,12 +31,10 @@ function mmsblog_get_picture_tag($file, $thumb) {
 
 function mmsblog_get_picture($file, $thumb) {
     $ret = '';
-    $ret .= '<span class="leftbox">';
-    $ret .= '<a href="#" onClick="return window.open(\'mmsblog-show-pic.php?pic=';
-    $ret .= $file;
-    $ret .= '\', \'Picture\', \'width=720,height=560,scrollbars=no\')">';
+    // $ret .= '<span class="leftbox">';
+    $ret .= '<a href="' . $file . '" rel="lightbox[mmsblog]">';
     $ret .= '<img src="' . $thumb . '"/></a>';
-    $ret .= '</span>';
+    // $ret .= '</span>';
     return $ret;
 }
 
@@ -52,24 +50,25 @@ function mmsblog_get_video_controller_tag($refmovie, $movie, $height) {
 function mmsblog_get_video_controller($refmovie, $movie, $height) {
     $width = 320;
     $ret = '';
-    $ret .= '<span class="leftbox">';
-	$ret .= '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" ';
-	$ret .= "width=\"$width\" height=\"$height\" ";
-	$ret .= 'codebase="http://www.apple.com/qtactivex/qtplugin.cab"> ';
-	$ret .= '<param name="src" value="' . $refmovie . '"/> ';
-	$ret .= '<param name="href" value="' . $movie . '"/> ';
-	$ret .= '<param name="target" value="myself"/> ';
-	$ret .= '<param name="autoplay" value="true"/> ';
-	$ret .= '<param name="controller" value="false"/> ';
-	$ret .= '<param name="scale" value="aspect"/> ';
-	$ret .= '<embed color="black" src="' . $refmovie . '" ';
-	$ret .= 'href="' . $movie . '" ';
-	$ret .= "target=\"myself\" width=\"$width\" height=\"$height\" controller=\"false\" ";
-	$ret .= 'scale="aspect" ';
-	$ret .= 'pluginspage="http://www.apple.com/quicktime/download/"> ';
-	$ret .= '</embed> </object>';
-	$ret .= '</span>';
-	return $ret;
+    // $ret .= '<span class="leftbox">';
+    $ret .= '<object z-index="1" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" ';
+    $ret .= "width=\"$width\" height=\"$height\" ";
+    $ret .= 'codebase="http://www.apple.com/qtactivex/qtplugin.cab"> ';
+    $ret .= '<param name="src" value="' . $refmovie . '"/> ';
+    $ret .= '<param name="href" value="' . $movie . '"/> ';
+    $ret .= '<param name="target" value="myself"/> ';
+    $ret .= '<param name="autoplay" value="true"/> ';
+    $ret .= '<param name="controller" value="false"/> ';
+    $ret .= '<param name="scale" value="aspect"/> ';
+    $ret .= '<embed color="black" src="' . $refmovie . '" ';
+    $ret .= 'href="' . $movie . '" ';
+    $ret .= "target=\"myself\" width=\"$width\" height=\"$height\" controller=\"false\" ";
+    $ret .= 'scale="aspect" ';
+    $ret .= 'pluginspage="http://www.apple.com/quicktime/download/"> ';
+    $ret .= '</embed>'; 
+    $ret .= '</object>';
+    // ret .= '</span>';
+    return $ret;
 }
 
 function debug_p($txt) {
