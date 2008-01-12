@@ -33,8 +33,10 @@ $filesdir = 'wp-filez';
 $tempdir = 'wp-temp';
 $_CONVERT = "/usr/bin/convert";
 // $_CONVERT = "/sw/bin/convert";
-$_THUMBPARS = "-geometry 320x320 -sharpen 2x1";
-$_NORPARS = "-geometry '640x480>' -sharpen 2x1";
+// $_THUMBPARS = "-geometry 320x320 -sharpen 2x1";
+// $_NORPARS = "-geometry '640x480>' -sharpen 2x1";
+$_THUMBPARS = "-geometry 320x320";
+$_NORPARS = "-geometry '640x480>'";
 
 //retrieve mail
 $pop3 = new POP3();
@@ -121,7 +123,7 @@ for ($i=1; $i <= $count; $i++) {
 	print "\n  Mail Format: " . $mailformat . "\n";
 	print '  From: ' . $from . "\n";
 	print '  Date: ' . $post_date . "\n";
-	// print '  Date GMT: ' . $post_date_gmt . "\n";
+	print '  Date GMT: ' . $post_date_gmt . "\n";
 	print '  Category: ' . $post_categories[0] . "\n";
 	print '  Subject: ' . $subject . "\n";
 	print '  Posted content:' . $content . "\n";
@@ -139,45 +141,28 @@ for ($i=1; $i <= $count; $i++) {
 		echo 'invalid sender: ' . htmlentities($from) . "\n";
 		continue;
 	}
+
+	$post_content = $content;
+	$post_title = $subject;
+	$post_author = $poster;
+	$post_category = $post_categories[0];
+	$post_status = "publish";
 	
-	$details = array(
-		'post_author'		=> $poster,
-		'post_date'			=> $post_date,
-		'post_date_gmt'		=> $post_date_gmt,
-		'post_content'		=> $content,
-		'post_title'		=> $subject,
-		'post_modified'		=> $post_date,
-		'post_modified_gmt'	=> $post_date_gmt
-	);
-	
-	//generate sql
+	$post_data = compact('post_content','post_title','post_date','post_date_gmt','post_author','post_category', 'post_status');
+	$post_data = add_magic_quotes($post_data);
 
-	$sql = 'INSERT INTO ' . $tableposts . ' (' . implode(',', array_keys($details)) . ') VALUES (\'' .  implode('\',\'', array_map('addslashes', $details)) . '\')';
+	$post_ID = wp_insert_post($post_data);
+	if ( is_wp_error( $post_ID ) ) 
+		echo "\n" . $post_ID->get_error_message();
 
-	$result = $wpdb->query($sql);
-	$post_ID = $wpdb->insert_id;
-	debug_p("post_ID $post_ID");
-
-	do_action('publish_post', $post_ID);
-	do_action('publish_phone', $post_ID);
-	pingback($content, $post_ID);
-	
-	foreach ($post_categories as $post_category) {
-		$post_category = intval($post_category);
-
-		// Double check it's not there already
-		$exists = $wpdb->get_row("SELECT * FROM $tablepost2cat WHERE post_id = $post_ID AND category_id = $post_category");
-		debug_p("exists = $exists");
-
-		 if (!$exists && $result) { 
-			$wpdb->query("
-			INSERT INTO $tablepost2cat
-			(post_id, category_id)
-			VALUES
-			($post_ID, $post_category)
-			");
-		}
+	if (!$post_ID) {
+		// we couldn't post, for whatever reason. better move forward to the next email
+		print "Could not get the post ID, continue to next message\n";
+		continue;
 	}
+
+	do_action('publish_phone', $post_ID);
+
 } // end looping over messages
 
 $pop3->quit();
@@ -195,10 +180,10 @@ function get_image($part) {
 	$thumbname = get_thumbname($random . '-' . $attname);
 	$thumbname = preg_replace('/ |\_/', '', $thumbname);
 	write_file($filename, $part);
-	print("$_CONVERT $_NORPARS '$filename' '$normalname'");
+	print("$_CONVERT $_NORPARS '$filename' '$normalname' \n");
 	exec("$_CONVERT $_NORPARS '$filename' '$normalname'", $res);
 	print_r($res);
-	print("$_CONVERT $_THUMBPARS '$filename' '$thumbname'");
+	print("$_CONVERT $_THUMBPARS '$filename' '$thumbname' \n");
 	exec("$_CONVERT $_THUMBPARS '$filename' '$thumbname'", $res);
 	print_r($res);
 	unlink("$filename");
