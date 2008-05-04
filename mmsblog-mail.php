@@ -129,12 +129,33 @@ for ($i=1; $i <= $count; $i++) {
 	print '  Posted content:' . $content . "\n";
 
 	// First check the table of email aliases
+	$from_found = 0;
 	$sql = 'SELECT wp_email FROM mmsblog_alias WHERE email=\'' . addslashes($from) . '\'';
 	$wp_email = $wpdb->get_var($sql);
 	if ($wp_email) {
-	   debug_p("  Email from $from corresponds to $wp_email");
-	   $from = $wp_email;
+		debug_p("  Email from $from corresponds to $wp_email");
+		$from = $wp_email;
+		$from_found = 1;
     }
+
+	// Try to locate the mail based on the phone number unless found before
+	if ($from_found == 0) {
+		debug_p("  $from was not found among aliases. Trying to extract the phone number.");
+		$phone = preg_replace('/^\+?(\d+).*/', '$1', $from, 1, $match);
+		debug_p("  -> phone == $phone");
+		if ($match) {
+			print "  Trying phone $phone\n";
+			$sql = 'SELECT wp_email FROM mmsblog_alias WHERE email=\'' . addslashes($phone) . '\'';
+			$wp_email = $wpdb->get_var($sql);
+			if ($wp_email) {
+				debug_p("  Email from $from corresponds to $wp_email");
+				$from = $wp_email;
+				$from_found = 1;
+			}
+		} else {
+			debug_p("  Couldn't find a mail using the phone number $phone");
+		}
+	}
 	
 	$sql = 'SELECT id FROM ' . $tableusers . ' WHERE user_email=\'' . addslashes($from) . '\'';
 	if (!$poster = $wpdb->get_var($sql)) {
