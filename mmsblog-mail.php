@@ -35,8 +35,8 @@ $_CONVERT = "/usr/bin/convert";
 // $_CONVERT = "/sw/bin/convert";
 // $_THUMBPARS = "-geometry 320x320 -sharpen 2x1";
 // $_NORPARS = "-geometry '640x480>' -sharpen 2x1";
-$_THUMBPARS = "-geometry 320x320";
-$_NORPARS = "-geometry '640x480>'";
+$_THUMBPARS = "-geometry '500x500>'";
+$_NORPARS = "-geometry '1024x768>'";
 
 //retrieve mail
 $pop3 = new POP3();
@@ -141,7 +141,9 @@ for ($i=1; $i <= $count; $i++) {
 	// Try to locate the mail based on the phone number unless found before
 	if ($from_found == 0) {
 		debug_p("  $from was not found among aliases. Trying to extract the phone number.");
-		$phone = preg_replace('/^\+?(\d+).*/', '$1', $from, 1, $match);
+		$phone = "";
+		// $phone = preg_replace('/^\+?(\d+).*/', '$1', $from, 1, $match);
+		$phone = preg_replace('/^[^\d]*(\d+).*/', '$1', $from, 1, $match);
 		debug_p("  -> phone == $phone");
 		if ($match) {
 			print "  Trying phone $phone\n";
