@@ -143,9 +143,10 @@ for ($i=1; $i <= $count; $i++) {
 		debug_p("  $from was not found among aliases. Trying to extract the phone number.");
 		$phone = "";
 		// $phone = preg_replace('/^\+?(\d+).*/', '$1', $from, 1, $match);
-		$phone = preg_replace('/^[^\d]*(\d+).*/', '$1', $from, 1, $match);
+		// $phone = preg_replace('/^[^\d]*(\d+).*/', '$1', $from, 1, $match);
+		$phone = preg_replace('/^[^\d]*(\d+).*/', '$1', $from, 1);
 		debug_p("  -> phone == $phone");
-		if ($match) {
+		if ($phone != $from) {
 			print "  Trying phone $phone\n";
 			$sql = 'SELECT wp_email FROM mmsblog_alias WHERE email=\'' . addslashes($phone) . '\'';
 			$wp_email = $wpdb->get_var($sql);
@@ -159,7 +160,7 @@ for ($i=1; $i <= $count; $i++) {
 		}
 	}
 	
-	$sql = 'SELECT id FROM ' . $tableusers . ' WHERE user_email=\'' . addslashes($from) . '\'';
+	$sql = 'SELECT id FROM wp_users WHERE user_email=\'' . addslashes($from) . '\'';
 	if (!$poster = $wpdb->get_var($sql)) {
 		echo 'invalid sender: ' . htmlentities($from) . "\n";
 		continue;
